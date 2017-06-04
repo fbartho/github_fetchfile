@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+###############################################################################
+## File: github_fetchfile
+## Purpose: Shell Script to curl-download large files from github
+## Notes:
+## - Will use your Github CLI Token from the macOS Keychain
+## - Has to hit the repo twice, once to get the SHA needed, and once to
+##   actually download your file. See instead github_fetchfile_small if < 1MB
+###############################################################################
+
+set -e
+
+while getopts ":t:o:r:b:p:O:s:" opt; do
+	case $opt in
+		t) TOKEN="$OPTARG"
+		;;
+		s) SCRIPT_NAME="$OPTARG"
+		;;
+		o) REPO_OWNER="$OPTARG"
+		;;
+		r) REPO="$OPTARG"
+		;;
+		b) BRANCH="$OPTARG"
+		;;
+		p) ASSET_PATH="$OPTARG"
+		;;
+		O) OUTPUT_PATH="$OPTARG"
+		;;
+		\?) INVALID=1; echo "Invalid Option: -$OPTARG" >&2
+		;;
+	esac
+done
+
+INVALID=${INVALID:-0}
+
+# Set Defaults
+REPO_OWNER=${REPO_OWNER:-"$GITHUB_USER"}
+BRANCH=${BRANCH:-"master"}
+# Used to get a unique access code for this script
+SCRIPT_NAME=${SCRIPT_NAME:-"$(basename "$0")"}
+
+# Test required params
+if [[ INVALID -eq 0 ]] && [[ "$REPO_OWNER" == "" ]]; then
+	echo "Repository owner must be passed in, or ENV[\$GITHUB_USER] must be set!" >&2
+	INVALID=1
+fi
+
+TOKEN=$("$(dirname "${BASH_SOURCE[0]}" )/github_token" -r -s "$SCRIPT_NAME")
+if [[ INVALID -eq 0 ]] && [[ "$TOKEN" == "" ]]; then
+	echo "Couldn't load Github Personal Access Token, aborting… " >&2
+	exit 1
+fi
+
+if [[ INVALID -eq 0 ]] && [[ "$ASSET_PATH" == "" ]]; then
+	echo "-p ASSET_PATH missing." >&2
+	INVALID=1
+fi
+if [[ INVALID -eq 0 ]] && [[ "$OUTPUT_PATH" == "" ]]; then
+	echo "-O OUTPUT_PATH missing." >&2
+	INVALID=1
+fi
+
+if [ $INVALID -eq 1 ]; then
+	echo "Usage: $0 [-t TOKEN] [-s SCRIPT_NAME] [-o REPO_OWNER] -r REPO [-b BRANCH] -p ASSET_PATH -O OUTPUT_PATH" >&2
+	echo " -t Github Personal Access Token with sufficient permissions. Will look at keychain if omitted." >&2
+	echo " -s Identifier for the Keychain item used to lookup a token for this script." >&2
+	exit 1
+fi
+
+Work-in-progress!

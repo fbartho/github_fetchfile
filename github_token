@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+###############################################################################
+## File: github_token
+## Purpose: Shell Script to get a personal access token from macOS Keychain.
+## Notes:
+## - Will use your Github CLI Token your Keychain
+## - On first use, will offer to save your token into the keychain
+## - Currently only supports repo-level tokens "-r"
+##    -- Future enhancement: more token access levels
+###############################################################################
+
+while getopts ":rs:" opt; do
+	case $opt in
+		r) REPO_ACCESS=1
+		;;
+		s) SERVICE_NAME="$OPTARG"
+		;;
+		\?) INVALID=1; echo "Invalid Option: -$OPTARG" >&2
+		;;
+	esac
+done
+
+INVALID=${INVALID:-0}
+REPO_ACCESS=${REPO_ACCESS:-0}
+
+ACCESS=""
+
+if [ $REPO_ACCESS -eq 0 ]; then
+	INVALID=1
+else
+	ACCESS="$ACCESS-repo_level"
+fi
+
+if [ $INVALID -eq 1 ]; then
+	echo "Usage: $0 -r -s SERVICE_NAME" >&2
+	echo "	-r: request repo-level access" >&2
+	exit 1
+fi
+
+SERVICE_NAME=${SERVICE_NAME:-"Unknown Service"}
+
+KEY_NAME="github_pat$ACCESS"
+
+# Load from the keychain
+TOKEN=$(security find-generic-password -a "$KEY_NAME" -s "$SERVICE_NAME" -w)
+if [ "$TOKEN" == "" ]; then
+	# Send the user to github!
+	echo "Please enter a Github Personal Access Token with $ACCESS permissions." >&2
+	echo "This will be stored in your keychain under name: \"$SERVICE_NAME\" account: \"$KEY_NAME\"." >&2
+	echo "	Github encourages you to create many tokens, that way it's easy to revoke them." >&2
+	echo "Security Note: You may want to store this in a Keychain you don't keep permanently unlocked." >&2
+	open "https://github.com/settings/tokens"
+	read -rsp "Token: " TOKEN >&2
+	if [ "$TOKEN" == "" ]; then
+		echo "No token. Aborting…" >&2
+		exit 1
+	else
+		# Store the token into Keychain!
+		security add-generic-password -a "$KEY_NAME" -s "$SERVICE_NAME" -w "$TOKEN"
+		echo "" >&2
+		echo "Token saved into keychain. Retry your operation!" >&2
+		exit 1
+	fi
+fi
+
+echo "$TOKEN"
