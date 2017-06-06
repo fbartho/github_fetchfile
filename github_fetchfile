@@ -6,6 +6,7 @@
 ## - Will use your Github CLI Token from the macOS Keychain
 ## - Has to hit the repo twice, once to get the SHA needed, and once to
 ##   actually download your file. See instead github_fetchfile_small if < 1MB
+## - Depends on node for JSON parsing.
 ###############################################################################
 
 set -e
@@ -67,4 +68,33 @@ if [ $INVALID -eq 1 ]; then
 	exit 1
 fi
 
-Work-in-progress!
+type node >/dev/null 2>&1 || { echo >&2 "This tool requires node for JSON parsing/inspection. Aborting."; exit 1; }
+
+# Technique from: https://medium.com/@caludio/how-to-download-large-files-from-github-4863a2dbba3b
+
+# 1. Fetch the dir of the target
+echo "https://api.github.com/repos/$REPO_OWNER/$REPO/contents/$(basename "$ASSET_PATH")?ref=$BRANCH"
+JSON_RESPONSE=$(curl -H "Authorization: token $TOKEN" -L "https://api.github.com/repos/$REPO_OWNER/$REPO/contents/$(dirname "$ASSET_PATH")?ref=$BRANCH")
+# echo "$JSON_RESPONSE"
+
+# 2. Parse the JSON of the dir and find the file we were looking for
+BASE=$(basename "$ASSET_PATH")
+# echo "Base $BASE"
+
+SCRIPT=$(cat <<- HEREDOC
+	var r=JSON.parse('${JSON_RESPONSE}');
+	r.forEach(function(v) {
+		if(v.name=='${BASE}'){
+			console.log(v.sha);
+		}
+	});
+HEREDOC
+)
+
+THE_SHA=$(echo "$SCRIPT" | tr -d '\n' | tr -d '\t' | node)
+# echo "$SHA"
+
+# 3. Fetch the large file
+curl -s -H "Authorization: token $TOKEN" \
+	-H "Accept: application/vnd.github.v3.raw+json" \
+	-o "$OUTPUT_PATH" -L "https://api.github.com/repos/$REPO_OWNER/$REPO/git/blobs/$THE_SHA"
