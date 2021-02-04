@@ -25,5 +25,5 @@ $ github_fetchfile[_small]
 Usage: ./github_fetchfile[_small] [-t TOKEN] [-s SCRIPT_NAME] [-o REPO_OWNER] -r REPO [-b BRANCH] -p ASSET_PATH -O OUTPUT_PATH
  -t Github Personal Access Token with sufficient permissions. Will look at keychain if omitted.
  -s Identifier for the Keychain item used to lookup a token for this script.
+ -b Choose what branch to fetch from. If omitted, the default branch name is 'main'.
 ```
-
