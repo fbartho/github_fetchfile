@@ -25,13 +25,13 @@ REPO_ACCESS=${REPO_ACCESS:-0}
 
 ACCESS=""
 
-if [ $REPO_ACCESS -eq 0 ]; then
+if [[ REPO_ACCESS -eq 0 ]]; then
 	INVALID=1
 else
 	ACCESS="$ACCESS-repo_level"
 fi
 
-if [ $INVALID -eq 1 ]; then
+if [[ INVALID -eq 1 ]]; then
 	echo "Usage: $0 -r -s SERVICE_NAME" >&2
 	echo "	-r: request repo-level access" >&2
 	exit 1

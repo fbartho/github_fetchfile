@@ -61,7 +61,7 @@ if [[ INVALID -eq 0 ]] && [[ "$OUTPUT_PATH" == "" ]]; then
 	INVALID=1
 fi
 
-if [ $INVALID -eq 1 ]; then
+if [[ INVALID -eq 1 ]]; then
 	echo "Usage: $0 [-t TOKEN] [-s SCRIPT_NAME] [-o REPO_OWNER] -r REPO [-b BRANCH] -p ASSET_PATH -O OUTPUT_PATH" >&2
 	echo " -t Github Personal Access Token with sufficient permissions. Will look at keychain if omitted." >&2
 	echo " -s Identifier for the Keychain item used to lookup a token for this script." >&2
